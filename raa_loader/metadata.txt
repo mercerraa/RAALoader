@@ -1,0 +1,47 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=RAÄ loader
+qgisMinimumVersion=3.0
+description=Download data from RAÄs Öppna data-portal
+version=0.1
+author=Andrew Mercer
+email=mercerraa@gmail.com
+
+about=Download geopackage files from https://www.raa.se/hitta-information/oppna-data/oppna-data-portal/ (not INSPIRE packages) and load them into current project with RAÄ symbology applied
+
+tracker=https://github.com/mercerraa/RAALoader/issues
+repository=https://github.com/mercerraa/RAALoader
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=web, layers, import
+
+homepage=https://mercerraa.github.io/
+category=Web
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+
