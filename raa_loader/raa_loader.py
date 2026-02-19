@@ -30,7 +30,7 @@ from .resources import *
 # Import the code for the dialog
 from .raa_loader_dialog import RAAloaderDialog
 import os.path
-
+from .RAALoader import *
 
 class RAAloader:
     """QGIS Plugin Implementation."""

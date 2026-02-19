@@ -4,7 +4,6 @@
 # Fetch and load RAÄ geopackages into a project
 # 12.02.2026
 import os
-import json
 import requests 
 import time
 from datetime import datetime, timedelta
