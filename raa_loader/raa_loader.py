@@ -198,4 +198,48 @@ class RAAloader:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
-            pass
+            selected = self.dlg.get_selected_option()
+
+            if selected == "downLam":
+                self.do_downLam()
+            elif selected == "downArk":
+                self.do_downArk()
+            elif selected == "downBeb":
+                self.do_downBeb()
+            elif selected == "downWhs":
+                self.do_downWhs()
+            elif selected == "mergeLam":
+                self.do_mergeLam()
+            elif selected == "mergeArk":
+                self.do_mergeArk()
+            elif selected == "mergeBeb":
+                self.do_mergeBeb()
+
+
+    def do_downLam(self):
+        print('Download lämningar')
+        loadLamningar()
+    
+    def do_downArk(self):
+        print('Download archeology')
+        loadArkeologi()
+    
+    def do_downBeb(self):
+        print('Download bebyggelse')
+        loadBebyggelse()
+    
+    def do_downWhs(self):
+        print('Download World heritage sites')
+        loadVarldsarv()
+    
+    def do_mergeLam(self):
+        print('Merge lämningar')
+        mergeLamningar()
+    
+    def do_mergeArk(self):
+        print('Merge archeology')
+        mergeArkeologi()
+    
+    def do_mergeBeb(self):
+        print('Merge bebyggelse')
+        mergeBebyggelse()

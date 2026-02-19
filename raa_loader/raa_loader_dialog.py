@@ -43,3 +43,20 @@ class RAAloaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+    def get_selected_option(self):
+        if self.downloadLamningRadioButton.isChecked():
+            return "downLam"
+        elif self.downloadArkeoRadioButton.isChecked():
+            return "downArk"
+        elif self.downloadBebyggRadioButton.isChecked():
+            return "downBeb"
+        elif self.downloadWhsRadioButton.isChecked():
+            return "downWhs"
+        elif self.mergeLamningRadioButton.isChecked():
+            return "mergeLam"
+        elif self.mergeArkeoRadioButton.isChecked():
+            return "mergeArk"
+        elif self.mergeBebyggRadioButton.isChecked():
+            return "mergeBeb"
+        return None
+

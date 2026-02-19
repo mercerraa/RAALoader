@@ -7,42 +7,58 @@
     <x>0</x>
     <y>0</y>
     <width>250</width>
-    <height>400</height>
+    <height>450</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>250</width>
-    <height>400</height>
+    <width>220</width>
+    <height>420</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>400</width>
-    <height>500</height>
+    <width>250</width>
+    <height>450</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>RAÄ loader</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>11</y>
-     <width>195</width>
-     <height>348</height>
+     <width>202</width>
+     <height>404</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QGroupBox" name="downloadGroupBox">
+       <widget class="QGroupBox" name="selectGroupBox">
         <property name="title">
-         <string>Ladda ned</string>
+         <string>Välj</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="downloadLabel">
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <property name="text">
+            <string>Ladda ned data</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QRadioButton" name="downloadLamningRadioButton">
            <property name="text">
@@ -71,28 +87,29 @@
            </property>
           </widget>
          </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QGroupBox" name="mergeGroupBox">
-        <property name="title">
-         <string>Slå ihop</string>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="mergeLabel">
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <property name="text">
+            <string>Slå ihop lager (JOIN)</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QRadioButton" name="mergeLamningRadioButton">
            <property name="text">
@@ -124,7 +141,7 @@
       <property name="maximumSize">
        <size>
         <width>200</width>
-        <height>16777215</height>
+        <height>50</height>
        </size>
       </property>
       <property name="orientation">
@@ -132,6 +149,9 @@
       </property>
       <property name="standardButtons">
        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      </property>
+      <property name="centerButtons">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
