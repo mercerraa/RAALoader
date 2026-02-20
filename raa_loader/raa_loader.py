@@ -217,29 +217,29 @@ class RAAloader:
 
 
     def do_downLam(self):
-        print('Download lämningar')
+        #print('Download lämningar')
         loadLamningar()
     
     def do_downArk(self):
-        print('Download archeology')
+        #print('Download archeology')
         loadArkeologi()
     
     def do_downBeb(self):
-        print('Download bebyggelse')
+        #print('Download bebyggelse')
         loadBebyggelse()
     
     def do_downWhs(self):
-        print('Download World heritage sites')
+        #print('Download World heritage sites')
         loadVarldsarv()
     
     def do_mergeLam(self):
-        print('Merge lämningar')
+        #print('Merge lämningar')
         mergeLamningar()
     
     def do_mergeArk(self):
-        print('Merge archeology')
+        #print('Merge archeology')
         mergeArkeologi()
     
     def do_mergeBeb(self):
-        print('Merge bebyggelse')
+        #print('Merge bebyggelse')
         mergeBebyggelse()

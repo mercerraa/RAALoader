@@ -25,16 +25,16 @@ from qgis.PyQt.QtWidgets import ( # pyright: ignore[reportMissingImports]
     QTreeWidget,
     QTreeWidgetItem,
     QMessageBox,
-    QProgressBar
+    QProgressBar,
+    QFileDialog
 )
 from qgis.PyQt.QtCore import ( # pyright: ignore[reportMissingImports]
     Qt
 )
-#from qgis.PyQt.QtCore import *
 ###########################
 #
 thisDir = os.path.dirname(os.path.realpath(os.path.expanduser(__file__)))
-print(f'{thisDir} is {os.path.isdir(thisDir)}')
+#print(f'{thisDir} is {os.path.isdir(thisDir)}')
 #
 def messageOut(title, messageText, level=Qgis.Info, duration=3):
     '''Sends message to user via QGIS message bar and to the built in QGIS Python console.
@@ -47,29 +47,33 @@ def messageOut(title, messageText, level=Qgis.Info, duration=3):
 def setInitialPaths():
   '''Set paths for current project'''
   # Define and set names and paths
-  print('setInitialPaths called')
+  #print('setInitialPaths called')
   projectInstance = QgsProject.instance()
   projectPath = projectInstance.absolutePath()
+  #projPath = QgsProject.instance().homePath()
   currentDir = os.getcwd()
-  if projectPath != currentDir:
+  if projectPath != currentDir and projectPath != '':
     os.chdir(os.path.normpath(projectPath))
     currentDir = os.getcwd()
-  # Set path for InData
-  inDir = os.path.join(currentDir, 'InData')
+  iface.messageBar().pushMessage('DATA', 'Var ska filerna sparas', Qgis.Info, 5)
+  inDir = QFileDialog.getExistingDirectory(iface.mainWindow(),"Välj mapp för data",currentDir,QFileDialog.ShowDirsOnly)
   if not os.path.exists(inDir):
     try:
+      inDir = os.path.join(projectPath, 'InData')
+      if not os.path.exists(inDir):
+        print(f'Trying to make {inDir}')
         os.makedirs(inDir)
+      print(f'Valid?:{os.path.exists(inDir)}')
     except:
-       messageOut('ERROR!','Save project to valid location first', Qgis.Critical, 10)
-       return
-  # Set path for qml files
+      messageOut('ERROR!','Ingen giltig mapp angiven', Qgis.Critical, 10)
+      return
   symbDir = os.path.join(thisDir, 'Symbology')
-  print(f'symbDir: {symbDir}\ninDir: {inDir}\ncurrentDir: {currentDir}')
+  #print(f'symbDir: {symbDir}\ninDir: {inDir}\ncurrentDir: {currentDir}')
   return symbDir, inDir, currentDir, projectInstance
 #
 def replaceString(filePath, oldStr, newStr):
   '''Search through text file and replace text. Needed for SGU historiska strandlinjer. The qlr file contains absolute paths that need changing to relative'''
-  print('replaceString called')
+  #print('replaceString called')
   with open(filePath, 'r') as file:
     filedata = file.read()
   filedata = filedata.replace(oldStr, newStr)
@@ -86,7 +90,7 @@ def deSwede(str):
 #
 def getFileTime(path):
     '''Gets creation and update time stamps of a file.'''
-    print('getFileTime called')
+    #print('getFileTime called')
     # elapsed since EPOCH in float
     ti_c = os.path.getctime(path) # Created
     ti_m = os.path.getmtime(path) # Modified
@@ -98,7 +102,7 @@ def getFileTime(path):
 def downloadCheck(gpkgPath, upfrq=2):
   '''Does a source file need updating? This function checks the modification date of a file against the current date. 
   If the difference is greater than the specified update frequency check for a new source data file'''
-  print(f'downloadCheck called with {gpkgPath}')
+  #print(f'downloadCheck called with {gpkgPath}')
   todaydt = datetime.now()
   today = todaydt.date()
   down = False
@@ -169,7 +173,7 @@ def download_url(url, save_path, chunk_size=128):
 def gpkgLayerInsert(settings):
   """
   """
-  print(f'gpkgLayerInsert called with {settings}')
+  #print(f'gpkgLayerInsert called with {settings}')
   filePath = settings['geopackage']
   sourceLayer = settings['sourceLayer']
   layerName = settings['layerName']
@@ -188,7 +192,7 @@ def gpkgLayerInsert(settings):
 def add_gpkg_layer(sourcePackage, sourceLayerName, layerName):
   '''Adds a layer from a geopackage to the QGIS project but doesn't insert it into the layer tree.
   Not inserting into layer tree is important here for updating an existing layer and putting back at same location in tree.'''
-  print(f'add_gpkg_layer called with {sourcePackage}, {sourceLayerName} {layerName}')
+  #print(f'add_gpkg_layer called with {sourcePackage}, {sourceLayerName} {layerName}')
   layer = QgsVectorLayer(f"{sourcePackage}|layername={sourceLayerName}", layerName, "ogr")
   if not layer.isValid():
     raise Exception(f"Could not load layer: {sourceLayerName}")
@@ -196,7 +200,7 @@ def add_gpkg_layer(sourcePackage, sourceLayerName, layerName):
   return layer
 #
 def saveStyle(layer):
-  print(f'saveStyle called with {layer}')
+  #print(f'saveStyle called with {layer}')
   style_name = "Default RAA style"
   description = "Saved via PyQGIS"
   use_as_default = True
@@ -211,9 +215,6 @@ def saveStyle(layer):
   if result:
     print(f"{layer.name()} Failed to save style.")
     print(result)
-  else:
-    pass
-    print(f"{layer.name()} Style saved successfully.")
   return
     
 def getLayerSource(layer):
@@ -222,7 +223,7 @@ def getLayerSource(layer):
   not the user-renamed display name.
   Courtesy of ChatGPT
   """
-  print(f'getLayerSource called with {layer}')
+  #print(f'getLayerSource called with {layer}')
   try:
     source = layer.source()
   except:
@@ -254,7 +255,7 @@ def getLayerSource(layer):
 def layerPosition(sourceLayer):
   '''Function takes a layer name and returns its parent and index in the layer tree
   parent, index = layerPosition(sourceLayer)'''
-  print(f'layerPosition called with {sourceLayer}')
+  #print(f'layerPosition called with {sourceLayer}')
   projectInstance = QgsProject.instance()
   root = projectInstance.layerTreeRoot()
   parent = False
@@ -272,7 +273,7 @@ def layerPosition(sourceLayer):
 #
 def getCurrentLayers(datasetName = 'Lämningar'):
   '''Get dictionary of län and kommuner currently in project for dataset (lämningar/bebyggelse)'''
-  print(f'getCurrentLayers called with {datasetName}')
+  #print(f'getCurrentLayers called with {datasetName}')
   projectInstance = QgsProject.instance()
   root = projectInstance.layerTreeRoot()
   lans = makeAreas(False)
@@ -538,8 +539,9 @@ def selected_group_layers():
   return all_layers
 #
 def mergeLayers(settings):
-  print(f'mergeLayers called with {settings}')
-  symbPath, inPath, currentDir, projectInstance = setInitialPaths()
+  #print(f'mergeLayers called with {settings}')
+  projectInstance = QgsProject.instance()
+  symbPath = os.path.join(thisDir, 'Symbology')
   root = projectInstance.layerTreeRoot()
   dataName = settings['dataName']
   if not root.findGroup(dataName):
@@ -586,7 +588,7 @@ def mergeLayers(settings):
 #
 def loadLamningar():
   '''Specific function called to update and insert lämningar'''
-  print('loadLamningar called')
+  #print('loadLamningar called')
   try:
     symbPath, inPath, currentDir, projectInstance = setInitialPaths()
   except:
@@ -711,7 +713,7 @@ def loadLamningar():
 #
 def loadArkeologi():
   '''Specific function called to update and insert lämningar'''
-  print('loadArkeologi called')
+  #print('loadArkeologi called')
   try:
     symbPath, inPath, currentDir, projectInstance = setInitialPaths()
   except:
@@ -824,7 +826,7 @@ def loadArkeologi():
 #
 def loadBebyggelse():
   '''Specific function called to update and insert bebyggelse'''
-  print('loadBebyggelse called')
+  #print('loadBebyggelse called')
   try:
     symbPath, inPath, currentDir, projectInstance = setInitialPaths()
   except:
@@ -908,7 +910,7 @@ def loadBebyggelse():
 #
 def loadVarldsarv():
   '''Specific function called to update and insert Världsarv'''
-  print('loadVarldsarv called')
+  #print('loadVarldsarv called')
   try:
     symbPath, inPath, currentDir, projectInstance = setInitialPaths()
   except:
@@ -946,7 +948,7 @@ def loadVarldsarv():
 #
 def mergeLamningar():
   """Function sends settings, names etc for layers to be merged. MergeLayers function uses these settings plus the layers in marked groups in the legend to combine layers"""
-  print('mergeLamningar called')
+  #print('mergeLamningar called')
   settings = {}
   settings['pre'] = 'lämningar'
   settings['post'] = 'egenskap'
@@ -992,7 +994,7 @@ def mergeLamningar():
   return
 #
 def mergeArkeologi():
-  print('mergeArkeologi called')
+  #print('mergeArkeologi called')
   settings = {}
   settings['pre'] = 'arkeologiska_uppdrag_undersökningsområden_'
   settings['post'] = '_polygon'
@@ -1016,7 +1018,7 @@ def mergeArkeologi():
   return
 def mergeBebyggelse():
   """Function sends settings, names etc for layers to be merged. MergeLayers function uses these settings plus the layers in marked groups in the legend to combine layers"""
-  print('mergeBebyggelse called')
+  #print('mergeBebyggelse called')
   settings = {}
   settings['pre'] = 'byggnadsminnen_skyddsomraden_'
   settings['post'] = '_polygon'
