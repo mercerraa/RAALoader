@@ -2,7 +2,7 @@
 # Andrew Mercer
 # mercerraa@gmail.com
 # Fetch and load RAÄ geopackages into a project
-# 12.02.2026
+# 20.02.2026
 import os
 import requests 
 import time
