@@ -211,6 +211,8 @@ class RAAloader:
                 self.do_downBeb()
             elif selected == "downWhs":
                 self.do_downWhs()
+            elif selected == "relateIng":
+                self.do_relIng()
             elif selected == "mergeLam":
                 self.do_mergeLam()
             elif selected == "mergeArk":
@@ -235,6 +237,9 @@ class RAAloader:
         #print('Download World heritage sites')
         loadVarldsarv()
     
+    def do_relIng(self):
+        ingaendeConnect()
+        
     def do_mergeLam(self):
         #print('Merge lämningar')
         mergeLamningar()

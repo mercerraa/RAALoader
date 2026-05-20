@@ -52,6 +52,8 @@ class RAAloaderDialog(QtWidgets.QDialog, FORM_CLASS):
             return "downBeb"
         elif self.downloadWhsRadioButton.isChecked():
             return "downWhs"
+        elif self.relateIngaendeRadioButton.isChecked():
+            return "relateIng"
         elif self.mergeLamningRadioButton.isChecked():
             return "mergeLam"
         elif self.mergeArkeoRadioButton.isChecked():
