@@ -8,7 +8,7 @@ name=RAA loader
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
 description=Download data from RAÄs Öppna data-portal
-version=1.0.2
+version=1.0.3
 author=Andrew Mercer
 email=mercerraa@gmail.com
 
@@ -22,7 +22,8 @@ repository=https://github.com/mercerraa/RAALoader
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-changelog=1.0.2 (2026-05-20) - Bug fix. Add relation
+changelog=1.0.3 (2026-05-29) - Bug fix for loadBebyggelse()
+  1.0.2 (2026-05-20) - Bug fix. Add relation
 	1.0.1 (2026-03-26) - Make QGIS 4 compatible
 
 # Tags are comma separated with spaces allowed

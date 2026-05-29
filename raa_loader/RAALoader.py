@@ -4,95 +4,41 @@
 # Riksantikvarieämbetets handläggarstöd
 # This version: 07.05.2026
 from datetime import (
-  date,
   datetime,
   timedelta
 )
-from html.entities import name2codepoint
-from html.parser import HTMLParser
-import json
 import os
-import processing
-import math
-from osgeo import gdal
-import requests
-import urllib.request
 import time
 import uuid
-import xml.etree.ElementTree as ET
-import zipfile
 #
 from qgis.core import (
   Qgis,
-  QgsApplication,
-  QgsAuthMethodConfig,
-  QgsAttributeEditorContainer,
   QgsAttributeEditorField,
   QgsAttributeEditorRelation,
-  QgsCoordinateReferenceSystem,
-  QgsCoordinateTransform,
   QgsDataSourceUri,
-  QgsFeature,
-  QgsField,
-  QgsFillSymbol,
-  QgsGeometry,
-  QgsGeometryValidator,
-  QgsLayerDefinition,
   QgsLayerTreeGroup,
   QgsLayerTreeLayer,
-  QgsMapLayer,
-  QgsMapLayerProxyModel,
-  QgsMapRendererParallelJob,
-  QgsMapSettings,
-  QgsMarkerSymbol,
   QgsMessageLog,
   QgsNetworkAccessManager,
-  QgsPalLayerSettings,
-  QgsPoint,
-  QgsPointXY,
   QgsProject,
-  QgsRectangle,
   QgsRelation,
-  QgsSingleSymbolRenderer,
-  QgsTextBufferSettings,
-  QgsTextFormat,
-  QgsRasterLayer,
-  QgsSettings,
   QgsVectorLayer,
-  QgsVectorLayerJoinInfo,
-  QgsVectorLayerSimpleLabeling,
-  QgsWkbTypes
 )
 from qgis.utils import iface
 from qgis.gui import (
-  QgsFileWidget,
-  QgsMapTool,
-  QgsMapLayerComboBox,
-  QgsMapToolEmitPoint,
-  QgsMapToolIdentifyFeature,
-  QgsRubberBand
-)
+   QgsMapToolIdentifyFeature,
+ )
 from qgis.PyQt.QtCore import (
   pyqtSignal,
-  QDate,
   QFile,
   QIODevice,
-  QEventLoop,
-  QMetaType,
   QObject,
   Qt,
   QUrl,
-  QSize
-)
-from qgis.PyQt.QtGui import (
-  QFont,
-  QColor,
 )
 from qgis.PyQt.QtWidgets import (
   QDialog,
-  QDialogButtonBox,
   QFileDialog,
-  QInputDialog,
   QLabel,
   QMessageBox,
   QProgressBar,
@@ -100,7 +46,6 @@ from qgis.PyQt.QtWidgets import (
   QTreeWidget,
   QTreeWidgetItem,
   QVBoxLayout,
-  QLineEdit
 )
 from qgis.PyQt.QtNetwork import( 
   QNetworkRequest,
@@ -119,7 +64,6 @@ def messageOut(title, messageText, level = Qgis.Info, duration = 3):
   """Sends message to user via QGIS message bar and to the built in QGIS Python console.
   Levels are Qgis.Info, Qgis.Warning, Qgis.Critical, Qgis.Success
   More of a convenience as it has defaults set. Also prints to python console."""
-  #print(f'Message - {title}: {messageText}')
   QgsMessageLog.logMessage(messageText, 'RAÄ', level)
   iface.messageBar().pushMessage(title, messageText, level, duration)
 #
@@ -624,10 +568,10 @@ def open_lans_selector(datasetName, smallestRegion="kommun", instruction1="Välj
       return
       print("getCurrentLayers failed")
     try:
-      lans = makeAreas(export = False)
+      lans = makeAreas()
     except:
       return
-      print("makeAreas failed")
+      
     try:
       dlg = LansSelectorDialog(lans, found, smallestRegion, instruction1, instruction2)
       try:
@@ -645,7 +589,7 @@ def open_lans_selector(datasetName, smallestRegion="kommun", instruction1="Välj
       print("LansSelectorDialog failed")
       return
 #
-def makeAreas(export = False):
+def makeAreas():
   """Dictionary of all of Sweden's län and kommuner. The order follows numerical codes for each län"""
   lans = {}
   lans['Stockholm'] = sorted(["Upplands Väsby" , "Vallentuna" , "Österåker" , "Värmdö" , "Järfälla" , "Ekerö" , "Huddinge" , "Botkyrka" , "Salem" , "Haninge" , "Tyresö" , "Upplands-Bro" , "Nykvarn" , "Täby" , "Danderyd" , "Sollentuna" , "Stockholm" , "Södertälje" , "Nacka" , "Sundbyberg" , "Solna" ,"Lidingö" , "Vaxholm" , "Norrtälje" , "Sigtuna" , "Nynäshamn"])
@@ -671,57 +615,7 @@ def makeAreas(export = False):
   lans['Norrbotten'] = sorted(["Arvidsjaur", "Arjeplog", "Jokkmokk", "Överkalix", "Kalix", "Övertorneå", "Pajala", "Gällivare", "Älvsbyn", "Luleå", "Piteå", "Boden", "Haparanda", "Kiruna"])
   return lans
 #
-#
 # Project ToC
-#
-class MultiLayerDialog(QDialog):
-  """Select multiple layers. Supports dragging mouse over list to select many."""
-  def __init__(self, titleText):
-    super().__init__()
-    self.setWindowTitle(titleText)
-    layout = QVBoxLayout()
-    self.list_widget = QListWidget()
-    self.list_widget.setSelectionMode(QListWidget.MultiSelection)
-    self.layers = list(QgsProject.instance().mapLayers().values())
-    self.layers = [layer for layer in QgsProject.instance().mapLayers().values() if layer.type() == QgsMapLayer.RasterLayer]
-    for layer in self.layers:
-      self.list_widget.addItem(layer.name())
-    layout.addWidget(self.list_widget)
-    ok_button = QPushButton("OK")
-    ok_button.clicked.connect(self.accept)
-    layout.addWidget(ok_button)
-    self.setLayout(layout)
-  def selected_layers(self):
-    selected_items = self.list_widget.selectedItems()
-    return [self.layers[self.list_widget.row(item)] for item in selected_items]
-#
-class LayerSelectDialog(QDialog):
-  """Select layers in a more controlled and restricted manner (compare with MultiLayerDialog)"""
-  def __init__(self, filterBy, preSelect = 'DEM', message = 'Välj lager'):
-    super().__init__()
-    self.setWindowTitle(message)
-    self.adjustSize()
-    self.setMinimumWidth(400)
-    layout = QVBoxLayout()
-    if filterBy == "raster":
-      filterType = QgsMapLayerProxyModel.RasterLayer
-    elif filterBy == "vector":
-      filterType = QgsMapLayerProxyModel.VectorLayer
-    else:
-      filterType = None
-    self.layer_combo = QgsMapLayerComboBox()
-    self.layer_combo.setFilters(filterType)  # optional
-    layout.addWidget(self.layer_combo)
-    self.ok_button = QPushButton("OK")
-    self.ok_button.clicked.connect(self.accept)
-    layout.addWidget(self.ok_button)
-    self.setLayout(layout)
-    self.preselect_layer(preSelect)
-  def preselect_layer(self, text):
-    for layer in QgsProject.instance().mapLayers().values():
-      if text.lower() in layer.name().lower():
-        self.layer_combo.setLayer(layer)
-        return
 #
 def getLayerSource(layer):
   """
@@ -735,7 +629,6 @@ def getLayerSource(layer):
      return False
   # --- GeoPackage ---
   if ".gpkg" in source.lower():
-    # GeoPackage URIs look like: 'path/to/file.gpkg|layername=roads'
     parts = source.split("|")
     for p in parts:
         if p.startswith("layername="):
@@ -785,7 +678,7 @@ def getCurrentLayers(datasetName = 'Lämningar'):
   '''Get dictionary of län and kommuner currently in project for dataset (lämningar/bebyggelse)'''
   projectInstance = QgsProject.instance()
   root = projectInstance.layerTreeRoot()
-  lans = makeAreas(False)
+  lans = makeAreas()
   found = {}
   if root.findGroup(datasetName):
     datasetGroup = root.findGroup(datasetName)
@@ -964,8 +857,7 @@ def mergeLayers(settings):
   layerList = []
   # Look through all layers or all ticked layers?
   selectedLayers = selectedGroupLayers()
-  for layer in selectedLayers: #projectInstance.mapLayers().values():
-    #for layer in iface.mapCanvas().layers():
+  for layer in selectedLayers:
     layerSourceName = getLayerSource(layer)
     if 'sverige' in layerSourceName.casefold():
        continue
@@ -1007,7 +899,6 @@ def loadLamningar():
   if inDir == None:
     return
   global symbDir
-  # Where to save the downloaded files
   if os.path.split(inDir)[1] == deDataName:
     folderPath = inDir
   else:
@@ -1050,7 +941,6 @@ def loadLamningar():
   manager.jobFinished.connect(on_finished)
   manager.jobFailed.connect(on_failed)
   manager.allFinished.connect(lambda: messageOut("Klart!", "Projektet uppdaterat"))
-  #
   def setSettings(gpkgPath, parent, baseName, area):
     settingsList = []
     for layerInfo in spatialLayers:
@@ -1081,7 +971,6 @@ def loadLamningar():
     # create path for geopackage
     gpkgPath = os.path.join(folderPath, gpkgName)
     url = f'{urlBase}{gpkgName}'
-    #######################################
     settingsList = setSettings(gpkgPath, parent, baseName, area)
     if downloadCheck(gpkgPath):
       manager.add_job(f'{url}', gpkgPath, passedFunction, settingsList)
@@ -1090,7 +979,6 @@ def loadLamningar():
       for settings in settingsList:
         gpkgLayerInsert(settings)
     manager.start()
-    #######################################
   elif downloadType == 'län':
     for lanName in lans.keys():
       lanLower = lanName.casefold()
@@ -1105,7 +993,6 @@ def loadLamningar():
       # create path for geopackage
       gpkgPath = os.path.join(folderPath, gpkgName)
       url = f'{urlBase}lan/{gpkgName}'
-      #######################################
       settingsList = setSettings(gpkgPath, parent, baseName, area)
       if downloadCheck(gpkgPath):
         manager.add_job(f'{url}', gpkgPath, passedFunction, settingsList)
@@ -1113,8 +1000,7 @@ def loadLamningar():
         QgsMessageLog.logMessage(f'{gpkgPath} finns och är aktuell', 'RAÄ', level = Qgis.Info)
         for settings in settingsList:
           gpkgLayerInsert(settings)
-    manager.start()
-        #######################################
+    manager.start()  
   elif downloadType == 'kommuner':
     for lanName, kommuner in lans.items():
       # Check for a län group in the ToC. If there isn't one make one
@@ -1135,7 +1021,6 @@ def loadLamningar():
         # create path for geopackage and check if update needed according to update frequency
         gpkgPath = os.path.join(folderPath, gpkgName)
         url = f'{urlBase}kommun/{gpkgName}'
-        #######################################
         settingsList = setSettings(gpkgPath, parent, baseName, area)
         if downloadCheck(gpkgPath):
           manager.add_job(f'{url}', gpkgPath, passedFunction, settingsList)
@@ -1143,8 +1028,7 @@ def loadLamningar():
           QgsMessageLog.logMessage(f'{gpkgPath} finns och är aktuell', 'RAÄ', level = Qgis.Info)
           for settings in settingsList:
             gpkgLayerInsert(settings)
-    manager.start()
-        #######################################
+    manager.start()   
   else:
      messageOut('Fel!',f'Om du ser det här har något gått fel. Kontakta utvecklaren',Qgis.Critical,5)
   return
@@ -1153,8 +1037,6 @@ def loadArkeologi():
   '''Specific function called to update and insert arkeologiska uppdrag'''
   # Specify which data set Lämningar, Arkeologiska undersökningar, Bebyggelse, Världsarv
   dataName = "Arkeologiska uppdrag"
-  # deDataName = deSwede(dataName)
-  # deDataName = deDataName.replace(" ","_")
   deDataName = deClutter(dataName)
   try:
     inDir = setInitialPath(deDataName)
@@ -1187,9 +1069,6 @@ def loadArkeologi():
   # Get parent ToC group for layers
   dataGroup = root.findGroup(dataName)
   # Define address and layer source names
-  # Note difference in url formulations for national vs local (YAPITFA):
-  # https://pub.raa.se/nedladdning/datauttag/arkeologiska_uppdrag/kommun/gravda_ytor/arkeologiska_uppdrag_gr%C3%A4vda_ytor_kommun_ale.gpkg
-  # https://pub.raa.se/nedladdning/datauttag/arkeologiska_uppdrag/arkeologiska_uppdrag_gr%C3%A4vda_ytor_sverige.gpkg
   urlBase = "https://pub.raa.se/nedladdning/datauttag/arkeologiska_uppdrag/"
   datas = {}
   datas['und'] = {'baseName': 'undersökningsområden', 'url':urlBase, 'urlAddition':'undersokningsomraden', 'layers':[['polygon', 'ArkUppUnderPolygon.qml'],['point', 'ArkUppUnderPoint.qml']]}
@@ -1220,7 +1099,6 @@ def loadArkeologi():
       gpkgPath = os.path.join(folderPath, gpkgName)
       url = f"{data['url']}{baseName}"
       layers = data['layers']
-    #######################################
       settingsList = []
       if name == 'und':
         layerNamePart = 'undersökningsområden'
@@ -1240,7 +1118,6 @@ def loadArkeologi():
         for settings in settingsList:
           gpkgLayerInsert(settings)
     manager.start()
-  #######################################
   elif downloadType == 'län':
     for lanName in lans.keys():
       lanLower = lanName.casefold()
@@ -1255,7 +1132,6 @@ def loadArkeologi():
         gpkgPath = os.path.join(folderPath, gpkgName)
         url = f"{data['url']}lan/{data['urlAddition']}/{baseName}"
         layers = data['layers']
-    #######################################
         settingsList = []
         if name == 'und':
           layerNamePart = 'undersökningsområden'
@@ -1275,7 +1151,6 @@ def loadArkeologi():
           for settings in settingsList:
             gpkgLayerInsert(settings)
     manager.start()
-  #######################################
   elif downloadType == 'kommuner':
     for lanName, kommuner in lans.items():
       # Check for a län group in the ToC. If there isn't one make one
@@ -1297,9 +1172,6 @@ def loadArkeologi():
           gpkgPath = os.path.join(folderPath, gpkgName)
           url = f"{data['url']}kommun/{data['urlAddition']}/{baseName}"
           layers = data['layers']
-          # messageText = f"********* {area}, {name} from {gpkgPath} with {layers}"
-          # QgsMessageLog.logMessage(messageText, 'RAÄ', level = Qgis.Critical)
-    #######################################
           settingsList = []
           if name == 'und':
             layerNamePart = 'undersökningsområden'
@@ -1308,19 +1180,13 @@ def loadArkeologi():
           for layerInfo in layers:
             settings = {'parent':parent, 'sourceLayer':f'{baseName}_{layerInfo[0]}', 'layerName':f'{layerInfo[0]} {layerNamePart}, {area}', 'layerStyle':os.path.join(symbDir, layerInfo[1]), 'groupName':dataName, 'geopackage':gpkgPath}
             settingsList.append(settings)
-            # messageText = messagify(settings)
-            # QgsMessageLog.logMessage(messageText, 'RAÄ', level = Qgis.Info)
           if downloadCheck(gpkgPath):
-            # messageText = f'------ Downloading {gpkgPath}'
-            # QgsMessageLog.logMessage(messageText, 'RAÄ', level = Qgis.Info)
             manager.add_job(f'{url}.gpkg', gpkgPath, passedFunction, settingsList)
           else:
             QgsMessageLog.logMessage(f'{gpkgPath} finns och är aktuell', 'RAÄ', level = Qgis.Info)
             for settings in settingsList:
               gpkgLayerInsert(settings)
     manager.start()
-  #######################################
-  #
   else:
      messageOut('Fel!',f'Om du ser det här har något gått fel. Kontakta utvecklaren',Qgis.Critical,5)
   return
@@ -1329,8 +1195,6 @@ def loadBebyggelse():
   '''Specific function called to update and insert bebyggelse'''
   # Specify which data set Lämningar, Arkeologiska undersökningar, Bebyggelse, Världsarv
   dataName = "Bebyggelse"
-  # deDataName = deSwede(dataName)
-  # deDataName = deDataName.replace(" ","_")
   deDataName = deClutter(dataName)
   try:
     inDir = setInitialPath(deDataName)
@@ -1346,7 +1210,6 @@ def loadBebyggelse():
     folderPath = os.path.join(inDir, deDataName)
   if not os.path.isdir(folderPath):
     os.mkdir(folderPath)
-  #messageOut('Nedladdning',f'Filerna sparas på {folderPath}',Qgis.Info,3)
   # Which kommuner are to be updated or added? Pass the name of the group, e.g. 'Lämningar' or 'Bebyggelse'
   try:
     lans, downloadType = open_lans_selector(dataName, 'lan', "Välj Sverige eller län", "Välj ett eller flera län:")
@@ -1370,7 +1233,7 @@ def loadBebyggelse():
   #
   def passedFunction(url, path, dummy):
     """Settings for loading geopackage layer"""
-    setting = dummy
+    settings = dummy
     return gpkgLayerInsert(settings)
   def on_failed(url, path, error):
     messageOut("Download", f"Failed: {path}, error={error}")
@@ -1389,7 +1252,6 @@ def loadBebyggelse():
       parent = dataGroup
       gpkgPath = os.path.join(folderPath, gpkgName)
       url = f"{data['url']}{baseName}"
-      #######################################
       if name == 'bms':
         settings = {'parent':parent, 'sourceLayer':f'{baseName}_polygon', 'layerName':f'Byggnadsminnen - skyddsområden, {area}', 'layerStyle':os.path.join(symbDir, 'Byggnadsminne.qml'), 'groupName':dataName, 'geopackage':gpkgPath}
       elif name == 'kib':
@@ -1403,10 +1265,7 @@ def loadBebyggelse():
       else:
         QgsMessageLog.logMessage(f'{gpkgPath} finns och är aktuell', 'RAÄ', level = Qgis.Info)
         return gpkgLayerInsert(settings)
-      ####
     manager.start()
-      #######################################
-  #
   elif downloadType == 'län':
     for lanName in lans.keys():
       lanLower = lanName.casefold()
@@ -1414,14 +1273,12 @@ def loadBebyggelse():
       if not dataGroup.findGroup(lanName):
         dataGroup.insertGroup(0, lanName)
       parent = dataGroup.findGroup(lanName)
-      #
       for name, data in datas.items():
         baseName = f"{data['baseName']}{lanLayerName}"
         gpkgName = baseName + ".gpkg"
         gpkgPath = os.path.join(folderPath, gpkgName)
         area = lanName
         url = f"{data['url']}{baseName}"
-        #######################################
         if name == 'bms':
           settings = {'parent':parent, 'sourceLayer':f'{baseName}_polygon', 'layerName':f'Byggnadsminnen - skyddsområden, {area}', 'layerStyle':os.path.join(symbDir, 'Byggnadsminne.qml'), 'groupName':dataName, 'geopackage':gpkgPath}
         elif name == 'kib':
@@ -1435,10 +1292,7 @@ def loadBebyggelse():
         else:
           QgsMessageLog.logMessage(f'{gpkgPath} finns och är aktuell', 'RAÄ', level = Qgis.Info)
           return gpkgLayerInsert(settings)
-        ####
       manager.start()
-      #######################################
-  #
   else:
      messageOut('Fel!',f'Om du ser det här har något gått fel. Kontakta utvecklaren',Qgis.Critical,5)
   return
@@ -1505,11 +1359,7 @@ def loadVarldsarv():
   if down == False and layer == False:
     gpkgLayerInsert(settings)
   return
-
 # Reshape RAÄ data layers
-#
-# C:/Users/anmer/OneDrive - Riksantikvarieambetet/2_PyQGIS/Edit/InData\Lamningar\lämningar_län_stockholm.gpkg|layername=lämningar_län_stockholm_lägesosäkerhet
-# C:/Users/anmer/OneDrive - Riksantikvarieambetet/2_PyQGIS/Edit/InData\Lamningar\lämningar_kommun_botkyrka.gpkg|layername=lämningar_kommun_botkyrka_lägesosäkerhet
 def mergeLamningar():
   """Function sends settings, names etc for layers to be merged. MergeLayers function uses these settings plus the layers in marked groups in the legend to combine layers"""
   
